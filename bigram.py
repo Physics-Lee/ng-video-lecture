@@ -8,7 +8,7 @@ block_size = 8 # what is the maximum context length for predictions?
 max_iters = 3000
 eval_interval = 300
 learning_rate = 1e-2
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = 'cuda' if torch.cuda.is_available() else 'cpu' # 'cpu' for CPU, 'cuda' for GPU
 eval_iters = 200
 # ------------
 
@@ -43,7 +43,7 @@ def get_batch(split):
     x, y = x.to(device), y.to(device)
     return x, y
 
-@torch.no_grad()
+@torch.no_grad() # disables gradient tracking, saves memory and computations
 def estimate_loss():
     out = {}
     model.eval()
@@ -68,7 +68,7 @@ class BigramLanguageModel(nn.Module):
     def forward(self, idx, targets=None):
 
         # idx and targets are both (B,T) tensor of integers
-        logits = self.token_embedding_table(idx) # (B,T,C)
+        logits = self.token_embedding_table(idx) # (B,T,C), batch, time, channel
 
         if targets is None:
             loss = None
@@ -98,6 +98,17 @@ class BigramLanguageModel(nn.Module):
 model = BigramLanguageModel(vocab_size)
 m = model.to(device)
 
+# Print the embedding table
+# print("Embedding table shape:", m.token_embedding_table.weight.shape)
+# print("Embedding table (first 5 rows, first 10 columns):")
+# print(m.token_embedding_table.weight[:5, :10])
+# print("\nFull embedding table:")
+# print(m.token_embedding_table.weight)
+
+# Print embedding table before training
+print("BEFORE training - Embedding table (first 5 rows, first 10 columns):")
+print(m.token_embedding_table.weight[:5, :10])
+
 # create a PyTorch optimizer
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
@@ -116,6 +127,10 @@ for iter in range(max_iters):
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
     optimizer.step()
+
+# Print embedding table after training
+print("\nAFTER training - Embedding table (first 5 rows, first 10 columns):")
+print(m.token_embedding_table.weight[:5, :10])
 
 # generate from the model
 context = torch.zeros((1, 1), dtype=torch.long, device=device)

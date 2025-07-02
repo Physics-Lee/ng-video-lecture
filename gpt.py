@@ -3,17 +3,17 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 # hyperparameters
-batch_size = 64 # how many independent sequences will we process in parallel?
-block_size = 256 # what is the maximum context length for predictions?
+batch_size = 64 # how many independent sequences will we process in parallel? (B)
+block_size = 256 # what is the maximum context length for predictions? (T)
 max_iters = 5000
 eval_interval = 500
 learning_rate = 3e-4
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 eval_iters = 200
-n_embd = 384
+n_embd = 384 # the dimensionality of the character embeddings and the MLPs (C)
 n_head = 6
 n_layer = 6
-dropout = 0.2
+dropout = 0.2 # probability of drop-out in the MLPs and attention layers
 # ------------
 
 torch.manual_seed(1337)
@@ -95,12 +95,12 @@ class MultiHeadAttention(nn.Module):
     def __init__(self, num_heads, head_size):
         super().__init__()
         self.heads = nn.ModuleList([Head(head_size) for _ in range(num_heads)])
-        self.proj = nn.Linear(head_size * num_heads, n_embd)
+        self.proj = nn.Linear(head_size * num_heads, n_embd) # 
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        out = torch.cat([h(x) for h in self.heads], dim=-1)
-        out = self.dropout(self.proj(out))
+        out = torch.cat([h(x) for h in self.heads], dim=-1) # concatenate the output of all heads
+        out = self.dropout(self.proj(out)) #
         return out
 
 class FeedFoward(nn.Module):
@@ -131,11 +131,11 @@ class Block(nn.Module):
         self.ln2 = nn.LayerNorm(n_embd)
 
     def forward(self, x):
-        x = x + self.sa(self.ln1(x))
-        x = x + self.ffwd(self.ln2(x))
+        x = x + self.sa(self.ln1(x)) # residual 
+        x = x + self.ffwd(self.ln2(x)) # residual 
         return x
 
-class GPTLanguageModel(nn.Module):
+class GPTLanguageModel(nn.Module): # GPT-2 style language model
 
     def __init__(self):
         super().__init__()
@@ -162,7 +162,7 @@ class GPTLanguageModel(nn.Module):
 
         # idx and targets are both (B,T) tensor of integers
         tok_emb = self.token_embedding_table(idx) # (B,T,C)
-        pos_emb = self.position_embedding_table(torch.arange(T, device=device)) # (T,C)
+        pos_emb = self.position_embedding_table(torch.arange(T, device=device)) # (T,C), T contains position info
         x = tok_emb + pos_emb # (B,T,C)
         x = self.blocks(x) # (B,T,C)
         x = self.ln_f(x) # (B,T,C)
