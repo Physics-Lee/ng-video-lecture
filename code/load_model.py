@@ -47,6 +47,9 @@ def load_model(model_path):
 def main():
     """
     Main function to handle command-line arguments and run text generation.
+
+    Example usage:
+        python code/load_model.py result/gpt_model_least_val_loss.pth --max_tokens 100
     """
     # Set up command-line argument parsing
     parser = argparse.ArgumentParser(description='Load GPT model and generate text')
@@ -69,10 +72,17 @@ def main():
         model, decode, stoi, itos = load_model(args.model_path)
         model = model.to(device)
         
-        # Generate new text starting from empty context
-        context = torch.zeros((1, 1), dtype=torch.long, device=device)
-        print(f"Generating {args.max_tokens} tokens...")
-        generated_text = decode(model.generate(context, max_new_tokens=args.max_tokens)[0].tolist())
+        # Create encode function to convert text to token indices
+        encode = lambda s: [stoi[c] for c in s]
+        
+        # Start generation from "Hi" instead of empty context
+        start_text = "Hi, I love the challenge of learning new things. What abo"
+        context = torch.tensor(encode(start_text), dtype=torch.long, device=device).unsqueeze(0)
+        print(f"Starting generation from: '{start_text}'")
+        print(f"Generating {args.max_tokens} additional tokens...")
+        
+        generated_tokens = model.generate(context, max_new_tokens=args.max_tokens)[0].tolist()
+        generated_text = decode(generated_tokens)
         
         # Display generated text
         print("\nGenerated text:")
